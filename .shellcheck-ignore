@@ -1,8 +1,10 @@
 ffdc
 tools/dreport.d/dreport
 tools/dreport.d/ibm.d/gendumpheader
+tools/dreport.d/ibm.d/plugins.d/badpel
 tools/dreport.d/ibm.d/plugins.d/vpd_data
 tools/dreport.d/include.d/functions
+tools/dreport.d/openpower.d/opdreport
 tools/dreport.d/openpower.d/plugins.d/obmcconsole1
 tools/dreport.d/plugins.d/altfwprintenv
 tools/dreport.d/plugins.d/bmcstate
@@ -33,4 +35,5 @@ tools/dreport.d/plugins.d/timedate
 tools/dreport.d/plugins.d/traceevents
 tools/dreport.d/plugins.d/top
 tools/dreport.d/plugins.d/uptime
-tools/dreport.d/ibm.d/plugins.d/badpel
+
+
