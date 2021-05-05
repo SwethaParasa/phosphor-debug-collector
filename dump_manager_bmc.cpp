@@ -96,7 +96,6 @@ sdbusplus::message::object_path
     createEntry(id, objPath, timeStamp, 0, std::string(),
                 phosphor::dump::OperationStatus::InProgress, originatorId,
                 originatorType);
-
     Manager::fUserDumpInProgress = true;
     return objPath.string();
 }
