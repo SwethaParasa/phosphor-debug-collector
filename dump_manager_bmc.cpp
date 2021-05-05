@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <ctime>
-#include <regex>
 
 namespace phosphor
 {
@@ -79,24 +78,36 @@ sdbusplus::message::object_path
     // Entry Object path.
     auto objPath = std::filesystem::path(baseEntryPath) / std::to_string(id);
 
+    uint64_t timeStamp =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    createEntry(id, objPath, timeStamp, 0, std::string(),
+                phosphor::dump::OperationStatus::InProgress, originatorId,
+                originatorType);
+    return objPath.string();
+}
+
+void Manager::createEntry(const uint32_t id, const std::string objPath,
+                          const uint64_t ms, uint64_t fileSize,
+                          const std::filesystem::path& file,
+                          phosphor::dump::OperationStatus status,
+                          std::string originatorId,
+                          originatorTypes originatorType)
+{
     try
     {
-        uint64_t timeStamp =
-            std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch())
-                .count();
-
         entries.insert(std::make_pair(
             id, std::make_unique<bmc::Entry>(
-                    bus, objPath.c_str(), id, timeStamp, 0, std::string(),
-                    phosphor::dump::OperationStatus::InProgress, originatorId,
-                    originatorType, *this)));
+                    bus, objPath.c_str(), id, ms, fileSize, file, status,
+                    originatorId, originatorType, *this)));
     }
     catch (const std::invalid_argument& e)
     {
-        lg2::error("Error in creating dump entry, errormsg: {ERROR}, "
-                   "OBJECTPATH: {OBJECT_PATH}, ID: {ID}",
-                   "ERROR", e, "OBJECT_PATH", objPath, "ID", id);
+        log<level::ERR>(fmt::format("Error in creating BMC dump entry, "
+                                    "errormsg({}), OBJECTPATH({}), ID({})",
+                                    e.what(), objPath.c_str(), id)
+                            .c_str());
         elog<InternalFailure>();
     }
 
