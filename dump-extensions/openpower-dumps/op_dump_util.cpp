@@ -12,45 +12,59 @@
 
 #include <filesystem>
 
+#include <fmt/core.h>
+#include <unistd.h>
+
+
 namespace openpower
 {
 namespace dump
 {
 namespace util
 {
+using namespace phosphor::logging;
+using InternalFailure =
+    sdbusplus::xyz::openbmc_project::Common::Error::InternalFailure;
 
-bool isOPDumpsEnabled(sdbusplus::bus_t& bus)
+void isOPDumpsEnabled()
 {
-    // Set isEnabled as true by default. In a field deployment, the system dump
-    // feature is usually enabled to facilitate effective debugging in the event
-    // of a failure. If due to some error, the settings service couldn't provide
-    // the actual value, the system assumes that the dump is enabled.
-    // This approach aligns with the principle of collecting as much data as
-    // possible for debugging in case of a system failure.
-    auto isEnabled = true;
-
+    auto enabled = true;
     constexpr auto enable = "xyz.openbmc_project.Object.Enable";
     constexpr auto policy = "/xyz/openbmc_project/dump/system_dump_policy";
     constexpr auto property = "org.freedesktop.DBus.Properties";
 
+    using disabled =
+        sdbusplus::xyz::openbmc_project::Dump::Create::Error::Disabled;
+
     try
     {
+        auto bus = sdbusplus::bus::new_default();
+
         auto service = phosphor::dump::getService(bus, policy, enable);
 
-        auto method = bus.new_method_call(service.c_str(), policy, property,
-                                          "Get");
+        auto method =
+            bus.new_method_call(service.c_str(), policy, property, "Get");
         method.append(enable, "Enabled");
         auto reply = bus.call(method);
         std::variant<bool> v;
         reply.read(v);
-        isEnabled = std::get<bool>(v);
+        enabled = std::get<bool>(v);
     }
     catch (const sdbusplus::exception::SdBusError& e)
     {
-        lg2::error("Error: {ERROR} in getting dump policy, default is enabled",
-                   "ERROR", e);
+        log<level::ERR>(
+            fmt::format("Error({}) in getting dump policy, default is enabled",
+                        e.what())
+                .c_str());
+        report<InternalFailure>();
     }
-    return isEnabled;
+
+    if (!enabled)
+    {
+        log<level::ERR>("OpePOWER dumps are disabled, skipping");
+        elog<disabled>();
+    }
+    log<level::INFO>("OpenPOWER dumps are enabled");
 }
 
 BIOSAttrValueType readBIOSAttribute(const std::string& attrName,
