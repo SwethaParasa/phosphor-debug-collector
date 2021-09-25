@@ -5,6 +5,8 @@
 #include "op_dump_consts.hpp"
 #include "resource_dump_serialize.hpp"
 
+#include <fmt/core.h>
+
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/lg2.hpp>
 #include <xyz/openbmc_project/Common/error.hpp>
