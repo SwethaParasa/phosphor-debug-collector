@@ -37,7 +37,18 @@ sdbusplus::message::object_path
 {
     if (params.size() > CREATE_DUMP_MAX_PARAMS)
     {
-        lg2::warning("BMC dump accepts not more than 2 additional parameters");
+        log<level::WARNING>(
+            "BMC dump accepts not more than 2 additional parameters");
+    }
+
+    if (Manager::fUserDumpInProgress == true)
+    {
+        elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
+    }
+
+    if (Manager::fUserDumpInProgress == true)
+    {
+        elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
     }
 
     // Get the originator id and type from params
@@ -85,6 +96,8 @@ sdbusplus::message::object_path
     createEntry(id, objPath, timeStamp, 0, std::string(),
                 phosphor::dump::OperationStatus::InProgress, originatorId,
                 originatorType);
+
+    Manager::fUserDumpInProgress = true;
     return objPath.string();
 }
 
@@ -131,42 +144,36 @@ uint32_t Manager::captureDump(DumpTypes type, const std::string& path)
         auto id = std::to_string(lastEntryId + 1);
         dumpPath /= id;
 
-        auto strType = dumpTypeToString(type).value();
+        // get dreport type map entry
+        auto tempType = TypeMap.find(type);
         execl("/usr/bin/dreport", "dreport", "-d", dumpPath.c_str(), "-i",
               id.c_str(), "-s", std::to_string(size).c_str(), "-q", "-v", "-p",
               path.empty() ? "" : path.c_str(), "-t", strType.c_str(), nullptr);
 
         // dreport script execution is failed.
         auto error = errno;
-        lg2::error("Error occurred during dreport function execution, "
-                   "errno: {ERRNO}",
-                   "ERRNO", error);
+        log<level::ERR>(fmt::format("Error occurred during dreport "
+                                    "function execution, errno({})",
+                                    error)
+                            .c_str());
         elog<InternalFailure>();
     }
     else if (pid > 0)
     {
-        Child::Callback callback = [this, type, pid](Child&, const siginfo_t*) {
-            if (type == DumpTypes::USER)
-            {
-                lg2::info("User initiated dump completed, resetting flag");
-                Manager::fUserDumpInProgress = false;
-            }
-            this->childPtrMap.erase(pid);
-        };
-        try
-        {
-            childPtrMap.emplace(pid,
-                                std::make_unique<Child>(eventLoop.get(), pid,
-                                                        WEXITED | WSTOPPED,
-                                                        std::move(callback)));
-        }
-        catch (const sdeventplus::SdEventError& ex)
+        // local variable goes out of scope using pointer, callback method
+        // need to dellocate the pointer
+        Type* typePtr = new Type();
+        *typePtr = type;
+        int rc = sd_event_add_child(eventLoop.get(), nullptr, pid,
+                                    WEXITED | WSTOPPED, callback,
+                                    reinterpret_cast<void*>(typePtr));
+        if (0 > rc)
         {
             // Failed to add to event loop
-            lg2::error(
-                "Error occurred during the sdeventplus::source::Child creation "
-                "ex: {ERROR}",
-                "ERROR", ex);
+            log<level::ERR>(fmt::format("Error occurred during the "
+                                        "sd_event_add_child call, rc({})",
+                                        rc)
+                                .c_str());
             elog<InternalFailure>();
         }
     }
