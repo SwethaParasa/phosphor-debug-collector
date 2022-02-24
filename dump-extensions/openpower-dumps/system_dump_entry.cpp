@@ -78,23 +78,11 @@ void Entry::delete_()
         elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
     }
 
-   
-
-    // Skip the system dump delete if the dump is in progress
-    // and in memory preserving reboot path
-    if ((openpower::dump::util::isInMpReboot()) &&
-        (status() == phosphor::dump::OperationStatus::InProgress))
-    {
-        log<level::INFO>(
-            fmt::format(
-                "Skip deleting system dump delete id({}) durng mp reboot",
-                dumpId)
-                .c_str());
-        return;
-    }
-
-    lg2::info("System dump delete id: {DUMP_ID} srcdumpid: {SRC_DUMP_ID}",
-              "DUMP_ID", dumpId, "SRC_DUMP_ID", srcDumpID);
+    log<level::INFO>(fmt::format("System dump delete id({}) srcdumpid({})",
+                                 dumpId, srcDumpID)
+                         .c_str());
+    auto path =
+        std::filesystem::path(SYSTEM_DUMP_SERIAL_PATH) / std::to_string(dumpId);
 
     // Remove host system dump when host is up by using source dump id
     // which is present in system dump entry dbus object as a property.
@@ -116,6 +104,18 @@ void Entry::delete_()
 
     // Remove Dump entry D-bus object
     phosphor::dump::Entry::delete_();
+    try
+    {
+        std::filesystem::remove_all(path);
+    }
+    catch (const std::filesystem::filesystem_error& e)
+    {
+        // Log Error message and continue
+        log<level::ERR>(
+            fmt::format("Failed to delete dump file({}), errormsg({})",
+                        path.string(), e.what())
+                .c_str());
+    }
 
     // Log PEL for dump delete/offload
     auto dBus = sdbusplus::bus::new_default();
