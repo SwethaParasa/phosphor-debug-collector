@@ -105,6 +105,18 @@ void Entry::delete_()
 
     // Remove Dump entry D-bus object
     phosphor::dump::Entry::delete_();
+    try
+    {
+        std::filesystem::remove_all(path);
+    }
+    catch (const std::filesystem::filesystem_error& e)
+    {
+        // Log Error message and continue
+        log<level::ERR>(
+            fmt::format("Failed to delete dump file({}), errormsg({})",
+                        path.string(), e.what())
+                .c_str());
+    }
 
     // Log PEL for dump delete/offload
     auto dBus = sdbusplus::bus::new_default();
