@@ -18,6 +18,12 @@ namespace util
  */
 void isOPDumpsEnabled();
 
+/** @brief Check whether memory preserving reboot is in progress
+ *  @return true - memory preserving reboot in progress
+ *          false - no memory preserving reboot is going on
+ */
+bool isInMpReboot();
+
 using BIOSAttrValueType = std::variant<int64_t, std::string>;
 
 /** @brief Read a BIOS attribute value

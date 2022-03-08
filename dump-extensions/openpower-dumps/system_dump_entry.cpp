@@ -3,6 +3,9 @@
 #include "dump_utils.hpp"
 #include "host_transport_exts.hpp"
 #include "op_dump_consts.hpp"
+#include "op_dump_util.hpp"
+
+#include <fmt/core.h>
 
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/lg2.hpp>
@@ -22,9 +25,11 @@ using namespace phosphor::logging;
 
 void Entry::initiateOffload(std::string uri)
 {
-    lg2::info("System dump offload request id: {ID} uri: {URI} "
-              "source dumpid: {SOURCE_DUMP_ID}",
-              "ID", id, "URI", uri, "SOURCE_DUMP_ID", sourceDumpId());
+    log<level::INFO>(
+        fmt::format(
+            "System dump offload request id({}) uri({}) source dumpid({})", id,
+            uri, sourceDumpId())
+            .c_str());
     phosphor::dump::Entry::initiateOffload(uri);
     phosphor::dump::host::requestOffload(sourceDumpId());
 }
@@ -38,10 +43,37 @@ void Entry::delete_()
     // Prevent delete when offload is in progress
     if ((!offloadUri().empty()) && (phosphor::dump::isHostRunning()))
     {
-        lg2::error("Dump offload is in progress id: {DUMP_ID} "
-                   "srcdumpid: {SRC_DUMP_ID}",
-                   "DUMP_ID", dumpId, "SRC_DUMP_ID", srcDumpID);
+        log<level::ERR>(
+            fmt::format("Dump offload is in progress id({}) srcdumpid({})",
+                        dumpId, srcDumpID)
+                .c_str());
         elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
+    }
+
+    // Skip the system dump delete if the dump is in progress
+    // and in memory preserving reboot path
+    if ((openpower::dump::util::isInMpReboot()) &&
+        (status() == phosphor::dump::OperationStatus::InProgress))
+    {
+        log<level::INFO>(
+            fmt::format(
+                "Skip deleting system dump delete id({}) durng mp reboot",
+                dumpId)
+                .c_str());
+        return;
+    }
+
+    // Skip the system dump delete if the dump is in progress
+    // and in memory preserving reboot path
+    if ((openpower::dump::util::isInMpReboot()) &&
+        (status() == phosphor::dump::OperationStatus::InProgress))
+    {
+        log<level::INFO>(
+            fmt::format(
+                "Skip deleting system dump delete id({}) durng mp reboot",
+                dumpId)
+                .c_str());
+        return;
     }
 
     lg2::info("System dump delete id: {DUMP_ID} srcdumpid: {SRC_DUMP_ID}",

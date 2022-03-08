@@ -22,6 +22,9 @@ namespace dump
 {
 namespace util
 {
+
+constexpr auto MP_REBOOT_FILE = "/run/openbmc/mpreboot@0";
+
 using namespace phosphor::logging;
 using InternalFailure =
     sdbusplus::xyz::openbmc_project::Common::Error::InternalFailure;
@@ -119,6 +122,11 @@ bool isSystemDumpInProgress(sdbusplus::bus_t& bus)
 
     lg2::info("Another system dump is not in progress");
     return false;
+}
+
+bool isInMpReboot()
+{
+    return std::filesystem::exists(MP_REBOOT_FILE);
 }
 
 } // namespace util
