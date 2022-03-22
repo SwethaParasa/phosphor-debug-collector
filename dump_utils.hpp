@@ -14,6 +14,7 @@
 #include <xyz/openbmc_project/Dump/Create/server.hpp>
 #include <xyz/openbmc_project/State/Boot/Progress/server.hpp>
 #include <xyz/openbmc_project/State/Host/server.hpp>
+#include <xyz/openbmc_project/State/Host/server.hpp>
 
 #include <memory>
 
@@ -129,81 +130,30 @@ T readDBusProperty(sdbusplus::bus_t& bus, const std::string& service,
     return retVal;
 }
 
+HostState getHostState();
+
+
 /**
- * @brief Get the state value
+ * @brief Get the host state value
  *
  * @param[in] intf - Interface to get the value
  * @param[in] objPath - Object path of the service
  * @param[in] state - State name to get
  *
- * @return The state value as type T on successful retrieval.
- *
- * @throws sdbusplus::exception for D-Bus failures and std::bad_variant_access
- * for invalid value
+ * @return The state value on success
+ *         Throw exception on failure
  */
-template <typename T>
-T getStateValue(const std::string& intf, const std::string& objPath,
-                const std::string& state)
-{
-    try
-    {
-        auto bus = sdbusplus::bus::new_default();
-        auto service = getService(bus, objPath, intf);
-        return std::get<T>(readDBusProperty<std::variant<T>>(
-            bus, service, objPath, intf, state));
-    }
-    catch (const sdbusplus::exception_t& e)
-    {
-        lg2::error(
-            "D-Bus call exception, OBJPATH: {OBJPATH}, "
-            "INTERFACE: {INTERFACE}, PROPERTY: {PROPERTY}, error: {ERROR}",
-            "OBJPATH", objPath, "INTERFACE", intf, "PROPERTY", state, "ERROR",
-            e);
-        throw;
-    }
-    catch (const std::bad_variant_access& e)
-    {
-        lg2::error("Exception raised while read state: {STATE} property "
-                   "value,  OBJPATH: {OBJPATH}, INTERFACE: {INTERFACE}, "
-                   "error: {ERROR}",
-                   "STATE", state, "OBJPATH", objPath, "INTERFACE", intf,
-                   "ERROR", e);
-        throw;
-    }
-}
-
-/**
- * @brief Get the host state
- *
- * @return HostState on success
- *
- * @throws std::runtime_error - If getting the state property fails
- */
-inline HostState getHostState()
-{
-    constexpr auto hostStateInterface = "xyz.openbmc_project.State.Host";
-    // TODO Need to change host instance if multiple instead "0"
-    constexpr auto hostStateObjPath = "/xyz/openbmc_project/state/host0";
-    return getStateValue<HostState>(hostStateInterface, hostStateObjPath,
-                                    "CurrentHostState");
-}
+std::string getStateValue(const std::string& intf, const std::string& objPath,
+                          const std::string& state);
 
 /**
  * @brief Get the host boot progress stage
  *
  * @return BootProgress on success
+ *         Throw exception on failure
  *
- * @throws std::runtime_error - If getting the state property fails
  */
-inline BootProgress getBootProgress()
-{
-    constexpr auto bootProgressInterface =
-        "xyz.openbmc_project.State.Boot.Progress";
-    // TODO Need to change host instance if multiple instead "0"
-    constexpr auto hostStateObjPath = "/xyz/openbmc_project/state/host0";
-    return getStateValue<BootProgress>(bootProgressInterface, hostStateObjPath,
-                                       "BootProgress");
-}
+BootProgress getBootProgress();
 
 /**
  * @brief Check whether host is running
@@ -294,13 +244,9 @@ inline void extractOriginatorProperties(phosphor::dump::DumpCreateParams params,
  * @brief Check whether host is quiesced
  *
  * @return true if the host is quiesced else false.
- *
- * @throws std::runtime_error - If getting the state failed
+ *         Throw exception on failure.
  */
-inline bool isHostQuiesced()
-{
-    return (getHostState() == HostState::Quiesced);
-}
+bool isHostQuiesced();
 
 /** @brief Extract the dump create parameters
  *  @param[in] key - The name of the parameter
