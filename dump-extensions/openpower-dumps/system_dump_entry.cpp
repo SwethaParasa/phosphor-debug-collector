@@ -39,17 +39,6 @@ void Entry::delete_()
     auto srcDumpID = sourceDumpId();
     auto dumpId = id;
 
-    // Offload URI will be set during dump offload
-    // Prevent delete when offload is in progress
-    if ((!offloadUri().empty()) && (phosphor::dump::isHostRunning()))
-    {
-        log<level::ERR>(
-            fmt::format("Dump offload is in progress id({}) srcdumpid({})",
-                        dumpId, srcDumpID)
-                .c_str());
-        elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
-    }
-
     // Skip the system dump delete if the dump is in progress
     // and in memory preserving reboot path
     if ((openpower::dump::util::isInMpReboot()) &&
@@ -62,6 +51,17 @@ void Entry::delete_()
                 .c_str());
         return;
     }
+
+    if ((!offloadUri().empty()) && (phosphor::dump::isHostRunning()))
+    {
+        log<level::ERR>(
+            fmt::format("Dump offload in progress id({}) srcdumpid({})", dumpId,
+                        srcDumpID)
+                .c_str());
+        elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
+    }
+
+   
 
     // Skip the system dump delete if the dump is in progress
     // and in memory preserving reboot path

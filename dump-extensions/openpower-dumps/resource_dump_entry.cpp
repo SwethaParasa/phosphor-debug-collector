@@ -46,9 +46,10 @@ void Entry::delete_()
 
     if ((!offloadUri().empty()) && (phosphor::dump::isHostRunning()))
     {
-        lg2::error("Dump offload is in progress, cannot delete dump, "
-                   "id: {DUMP_ID} srcdumpid: {SRC_DUMP_ID}",
-                   "DUMP_ID", dumpId, "SRC_DUMP_ID", srcDumpID);
+        log<level::ERR>(fmt::format("Dump offload in progress, cannot delete "
+                                    "dump, id({}) srcdumpid({})",
+                                    dumpId, srcDumpID)
+                            .c_str());
         elog<sdbusplus::xyz::openbmc_project::Common::Error::Unavailable>();
     }
 
