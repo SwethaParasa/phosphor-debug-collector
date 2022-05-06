@@ -38,14 +38,12 @@ using BIOSAttrValueType = std::variant<int64_t, std::string>;
 BIOSAttrValueType readBIOSAttribute(const std::string& attrName,
                                     sdbusplus::bus_t& bus);
 
-/** @brief Check whether a system is in progress or available to offload.
- *
- *  @param[in] bus - D-Bus handle
- *
+/** @brief Check whether a system is in progress or
+ *  available to offload.
  *  @return true - A dump is in progress or available to offload
  *          false - No dump in progress
  */
-bool isSystemDumpInProgress(sdbusplus::bus_t& bus);
+bool isSystemDumpInProgress();
 } // namespace util
 } // namespace dump
 } // namespace openpower

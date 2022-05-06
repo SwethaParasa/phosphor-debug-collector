@@ -2,12 +2,15 @@
 #include "dump_manager.hpp"
 #include "dump_types.hpp"
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <systemd/sd-event.h>
 #include <unistd.h>
 
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
 #include <phosphor-logging/lg2.hpp>
+#include <phosphor-logging/log.hpp>
 #include <sdbusplus/bus.hpp>
 #include <xyz/openbmc_project/Common/error.hpp>
 #include <xyz/openbmc_project/Dump/Create/common.hpp>
@@ -99,20 +102,21 @@ std::string getService(sdbusplus::bus_t& bus, const std::string& path,
  * @param[in] object object having has implemented the interface
  * @param[in] intf interface having the property
  * @param[in] prop name of the property to read
- * @throws sdbusplus::exception::SdBusError if an error occurs in the dbus call
  * @return property value
  */
 template <typename T>
-T readDBusProperty(sdbusplus::bus_t& bus, const std::string& service,
+T readDBusProperty(sdbusplus::bus::bus& bus, const std::string& service,
                    const std::string& object, const std::string& intf,
                    const std::string& prop)
 {
+    using ::phosphor::logging::level;
+    using ::phosphor::logging::log;
     T retVal{};
     try
     {
-        auto properties = bus.new_method_call(service.c_str(), object.c_str(),
-                                              "org.freedesktop.DBus.Properties",
-                                              "Get");
+        auto properties =
+            bus.new_method_call(service.c_str(), object.c_str(),
+                                "org.freedesktop.DBus.Properties", "Get");
         properties.append(intf);
         properties.append(prop);
         auto result = bus.call(properties);
@@ -120,11 +124,11 @@ T readDBusProperty(sdbusplus::bus_t& bus, const std::string& service,
     }
     catch (const std::exception& ex)
     {
-        lg2::error(
-            "Failed to get the property: {PROPERTY} interface: {INTERFACE} "
-            "object path: {OBJECT_PATH} error: {ERROR} ",
-            "PROPERTY", prop, "INTERFACE", intf, "OBJECT_PATH", object, "ERROR",
-            ex);
+        log<level::ERR>(
+            fmt::format("Failed to get the property ({}) interface ({}) "
+                        "object path ({}) error ({}) ",
+                        prop.c_str(), intf.c_str(), object.c_str(), ex.what())
+                .c_str());
         throw;
     }
     return retVal;
