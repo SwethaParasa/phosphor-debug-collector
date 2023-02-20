@@ -2,6 +2,8 @@
 #include "dump_manager.hpp"
 #include "dump_offload.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
+#include "dump_utils.hpp"
+
 #include <fmt/core.h>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
@@ -18,6 +20,15 @@ using namespace phosphor::logging;
 
 void Entry::delete_()
 {
+    // Log PEL for dump delete/offload
+    {
+        auto dBus = sdbusplus::bus::new_default();
+        phosphor::dump::createPEL(
+            dBus, path(), "BMC Dump", id,
+            "xyz.openbmc_project.Logging.Entry.Level.Informational",
+            "xyz.openbmc_project.Dump.Error.Invalidate");
+    }
+
     // Delete Dump file from Permanent location
     try
     {
