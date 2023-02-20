@@ -5,6 +5,7 @@
 #include <phosphor-logging/lg2.hpp>
 #include <sdbusplus/async.hpp>
 #include <phosphor-logging/log.hpp>
+#include <sdbusplus/async.hpp>
 
 namespace phosphor
 {
@@ -170,8 +171,13 @@ void createPEL(sdbusplus::bus::bus& dBus, const std::string& dumpFilePath,
             busMethod.call_async([&](sdbusplus::message::message&& reply) {
                 if (reply.is_method_error())
                 {
-                    log<level::ERR>(
+                    log<level::INFO>(
                         "Error in calling async method to create PEL");
+                }
+                else
+                {
+                    log<level::ERR>(
+                        "Success calling async method to create PEL");
                 }
             });
         if (!retVal)
