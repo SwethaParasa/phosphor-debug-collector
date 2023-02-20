@@ -134,198 +134,21 @@ T readDBusProperty(sdbusplus::bus::bus& bus, const std::string& service,
     return retVal;
 }
 
-HostState getHostState();
-
 
 /**
- * @brief Get the host state value
+ * @brief Create a new PEL message for dump Delete/Offload
  *
- * @param[in] intf - Interface to get the value
- * @param[in] objPath - Object path of the service
- * @param[in] state - State name to get
- *
- * @return The state value on success
- *         Throw exception on failure
- */
-std::string getStateValue(const std::string& intf, const std::string& objPath,
-                          const std::string& state);
-
-/**
- * @brief Get the host boot progress stage
- *
- * @return BootProgress on success
- *         Throw exception on failure
- *
- */
-BootProgress getBootProgress();
-
-/**
- * @brief Check whether host is running
- *
- * @return true if the host running else false.
- *
- * @throws std::runtime_error - If getting the boot progress failed
- */
-inline bool isHostRunning()
-{
-    // TODO #ibm-openbmc/dev/2858 Revisit the method for finding whether host
-    // is running.
-    BootProgress bootProgressStatus = getBootProgress();
-    if ((bootProgressStatus == BootProgress::SystemInitComplete) ||
-        (bootProgressStatus == BootProgress::SystemSetup) ||
-        (bootProgressStatus == BootProgress::OSStart) ||
-        (bootProgressStatus == BootProgress::OSRunning) ||
-        (bootProgressStatus == BootProgress::PCIInit))
-    {
-        return true;
-    }
-    return false;
-}
-
-inline void extractOriginatorProperties(phosphor::dump::DumpCreateParams params,
-                                        std::string& originatorId,
-                                        originatorTypes& originatorType)
-{
-    using InvalidArgument =
-        sdbusplus::xyz::openbmc_project::Common::Error::InvalidArgument;
-    using Argument = xyz::openbmc_project::Common::InvalidArgument;
-    using CreateParametersXYZ =
-        sdbusplus::xyz::openbmc_project::Dump::server::Create::CreateParameters;
-
-    auto iter = params.find(
-        sdbusplus::xyz::openbmc_project::Dump::server::Create::
-            convertCreateParametersToString(CreateParametersXYZ::OriginatorId));
-    if (iter == params.end())
-    {
-        lg2::info("OriginatorId is not provided");
-    }
-    else
-    {
-        try
-        {
-            originatorId = std::get<std::string>(iter->second);
-        }
-        catch (const std::bad_variant_access& e)
-        {
-            // Exception will be raised if the input is not string
-            lg2::error("An invalid originatorId passed. It should be a string, "
-                       "errormsg: {ERROR}",
-                       "ERROR", e);
-            elog<InvalidArgument>(Argument::ARGUMENT_NAME("ORIGINATOR_ID"),
-                                  Argument::ARGUMENT_VALUE("INVALID INPUT"));
-        }
-    }
-
-    iter = params.find(sdbusplus::xyz::openbmc_project::Dump::server::Create::
-                           convertCreateParametersToString(
-                               CreateParametersXYZ::OriginatorType));
-    if (iter == params.end())
-    {
-        lg2::info("OriginatorType is not provided. Replacing the string "
-                  "with the default value");
-        originatorType = originatorTypes::Internal;
-    }
-    else
-    {
-        try
-        {
-            std::string type = std::get<std::string>(iter->second);
-            originatorType = sdbusplus::xyz::openbmc_project::Common::server::
-                OriginatedBy::convertOriginatorTypesFromString(type);
-        }
-        catch (const std::bad_variant_access& e)
-        {
-            // Exception will be raised if the input is not string
-            lg2::error("An invalid originatorType passed, errormsg: {ERROR}",
-                       "ERROR", e);
-            elog<InvalidArgument>(Argument::ARGUMENT_NAME("ORIGINATOR_TYPE"),
-                                  Argument::ARGUMENT_VALUE("INVALID INPUT"));
-        }
-    }
-}
-
-/**
- * @brief Check whether host is quiesced
- *
- * @return true if the host is quiesced else false.
- *         Throw exception on failure.
- */
-bool isHostQuiesced();
-
-/** @brief Extract the dump create parameters
- *  @param[in] key - The name of the parameter
- *  @param[in] params - The map of parameters passed as input
- *
- *  @return On success, a std::optional containing the value of the parameter
- * (of type T). On failure (key not found in the map or the value is not of type
- * T), returns an empty std::optional.
- */
-template <typename T>
-T extractParameter(const std::string& key,
-                   phosphor::dump::DumpCreateParams& params)
-{
-    using InvalidArgument =
-        sdbusplus::xyz::openbmc_project::Common::Error::InvalidArgument;
-    using Argument = xyz::openbmc_project::Common::InvalidArgument;
-
-    auto it = params.find(key);
-    if (it != params.end())
-    {
-        const auto& [foundKey, variantValue] = *it;
-        if (std::holds_alternative<T>(variantValue))
-        {
-            return std::get<T>(variantValue);
-        }
-        else
-        {
-            lg2::error("An invalid input passed for key: {KEY}", "KEY", key);
-            elog<InvalidArgument>(Argument::ARGUMENT_NAME(key.c_str()),
-                                  Argument::ARGUMENT_VALUE("INVALID INPUT"));
-        }
-    }
-    return T{};
-}
-
-/**
- * @brief This function fetches the dump type associated with a particular
- * error.
- *
- * @param[in] params The map of parameters passed as input.
- *
- * @return The dump type associated with the error.
- *
- * @throw std::invalid_argument If the dump type associated with the error
- * type is not found in the map.
- */
-inline DumpTypes getErrorDumpType(phosphor::dump::DumpCreateParams& params)
-{
-    using CreateParameters =
-        sdbusplus::xyz::openbmc_project::Dump::server::Create::CreateParameters;
-    using DumpIntr = sdbusplus::common::xyz::openbmc_project::dump::Create;
-    using InvalidArgument =
-        sdbusplus::xyz::openbmc_project::Common::Error::InvalidArgument;
-    using Argument = xyz::openbmc_project::Common::InvalidArgument;
-
-    std::string errorType = extractParameter<std::string>(
-        DumpIntr::convertCreateParametersToString(CreateParameters::ErrorType),
-        params);
-    if (!isErrorTypeValid(errorType))
-    {
-        lg2::error("An invalid error type passed type: {ERROR_TYPE}",
-                   "ERROR_TYPE", errorType);
-        elog<InvalidArgument>(Argument::ARGUMENT_NAME("ERROR_TYPE"),
-                              Argument::ARGUMENT_VALUE(errorType.c_str()));
-    }
-    auto type = stringToDumpType(errorType);
-    if (type.has_value())
-    {
-        return type.value();
-    }
-
-    // Ideally this should never happen, because if the error type is valid
-    // it should be present in the dumpTypeToStringMap
-    throw std::invalid_argument{"Dump type not found"};
-}
+ * @param[in] dBus - Handle to D-Bus object
+ * @param[in] dumpFilePath - Deleted dump file path/name
+ * @param[in] dumpFileType - Deleted dump file type (BMC/Resource/System)
+ * @param[in] dumpId - The dump ID
+ * @param[in] pelSev - PEL severity (Informational by default)
+ * @param[in] errIntf - D-Bus interface name.
+ * @return Returns void
+ **/
+void createPEL(sdbusplus::bus::bus& dBus, const std::string& dumpFilePath,
+               const std::string& dumpFileType, const int dumpId,
+               const std::string& pelSev, const std::string& errIntf);
 
 } // namespace dump
 } // namespace phosphor
