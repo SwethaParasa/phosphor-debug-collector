@@ -70,8 +70,10 @@ void writeOnUnixSocket(const int socket, const char* buf,
                     numOfBytesWrote = 0;
                     continue;
                 }
-                lg2::error("writeOnUnixSocket: write() failed, errno: {ERRNO}",
-                           "ERRNO", errno);
+                log<level::ERR>(
+                    fmt::format("writeOnUnixSocket: write() failed, errno({})",
+                                errno)
+                        .c_str());
                 std::string msg = "write() on socket failed " +
                                   std::string(strerror(errno));
                 throw std::runtime_error(msg);
@@ -97,7 +99,7 @@ int socketInit(const std::string& sockPath)
     if (strnlen(sockPath.c_str(), sizeof(socketAddr.sun_path)) ==
         sizeof(socketAddr.sun_path))
     {
-        lg2::error("UNIX socket path too long");
+        log<level::ERR>("UNIX socket path too long");
         std::string msg = "UNIX socket path is too long " +
                           std::string(strerror(errno));
         throw std::length_error(msg);
@@ -165,9 +167,10 @@ void requestOffload(std::filesystem::path file, uint32_t dumpId,
             CustomFd socketFD = accept(unixSocket(), NULL, NULL);
             if (socketFD() < 0)
             {
-                lg2::error(
-                    "accept() failed, errno: {ERRNO}, DUMP_ID: {DUMP_ID}",
-                    "ERRNO", errno, "DUMP_ID", dumpId);
+                log<level::ERR>(
+                    fmt::format("accept() failed, errno({}), DUMP_ID({})",
+                                errno, dumpId)
+                        .c_str());
                 std::string msg = "accept() failed " +
                                   std::string(strerror(errno));
                 throw std::runtime_error(msg);

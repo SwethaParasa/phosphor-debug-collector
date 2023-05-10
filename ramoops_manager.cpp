@@ -106,20 +106,9 @@ void Manager::createHelper(const std::vector<std::string>& files)
     }
 
     const auto& host = mapperResponse.cbegin()->first;
-    auto m = b.new_method_call(host.c_str(), BMC_DUMP_OBJPATH,
-                               DUMP_CREATE_IFACE, "CreateDump");
-    phosphor::dump::DumpCreateParams params;
-    using CreateParameters =
-        sdbusplus::common::xyz::openbmc_project::dump::Create::CreateParameters;
-    using DumpType =
-        sdbusplus::common::xyz::openbmc_project::dump::Create::DumpType;
-    using DumpIntr = sdbusplus::common::xyz::openbmc_project::dump::Create;
-    params[DumpIntr::convertCreateParametersToString(
-        CreateParameters::DumpType)] =
-        DumpIntr::convertDumpTypeToString(DumpType::Ramoops);
-    params[DumpIntr::convertCreateParametersToString(
-        CreateParameters::FilePath)] = files.front();
-    m.append(params);
+    auto m = b.new_method_call(host.c_str(), OBJ_INTERNAL, IFACE_INTERNAL,
+                               "Create");
+    m.append(RAMOOPS, files);
     try
     {
         b.call_noreply(m);
