@@ -138,73 +138,25 @@ conf_data.set('TIMESTAMP_FORMAT', get_option('TIMESTAMP_FORMAT'),
 configure_file(configuration : conf_data,
                output : 'config.h'
               )
-
-dump_types_yaml_files = []
-
-# Dump types YAML file
-dump_types_yaml_files += {'input': 'example_dump_types.yaml',
-         'output': 'dump_types.yaml'}
-
-# Copy and combine YAML files
-concatenate_command = 'cat '
-combined_yaml_file = 'combined_dump_types.yaml'
-
-foreach yaml_file : dump_types_yaml_files
-    configure_file(input : yaml_file.get('input'),
-                   output : yaml_file.get('output'),
-                   copy : true)
-    concatenate_command += meson.build_root() + '/' + yaml_file.get('output') + ' '
-endforeach
-
-concatenate_command += '> ' + meson.build_root() + '/' + combined_yaml_file
-run_command('sh', '-c', concatenate_command)
+subdir('xyz/openbmc_project/Dump/Internal/Create')
 
 python = find_program('python3')
 map_gen_file_loc = meson.project_source_root()
 map_gen_file_loc += '/map_gen.py'
 
-dump_types_hpp = custom_target(
-                    'dump_types.hpp',
+errors_map_cpp = custom_target(
+                    'errors_map.cpp',
                     command : [
                         python,
                         map_gen_file_loc,
                         '-i',
-                        meson.build_root() + '/' +  combined_yaml_file,
-                        '-j',
-                        get_option('ERROR_MAP_YAML'),
-                        '-t',
-                        'dump_types.mako.hpp',
-                        '-o',
-                        'dump_types.hpp'
+                        get_option('ERROR_MAP_YAML')
                     ],
-                    depend_files : [ 'dump_types.mako.hpp',
-                                     'map_gen.py',
-                                     meson.build_root() + '/' +  combined_yaml_file,
+                    depend_files : [ 'errors_map.mako.cpp',
+                                     'errors_map_gen.py',
                                      get_option('ERROR_MAP_YAML')
                                    ],
-                    output : 'dump_types.hpp'
-                 )
-
-dump_types_cpp = custom_target(
-                    'dump_types.cpp',
-                    command : [
-                        python,
-                        map_gen_file_loc,
-                        '-i',
-                        meson.build_root() + '/' +  combined_yaml_file,
-                        '-j',
-                        get_option('ERROR_MAP_YAML'),
-                        '-t',
-                        'dump_types.mako.cpp',
-                        '-o',
-                        'dump_types.cpp'
-                    ],
-                    depend_files : [ 'dump_types.mako.cpp',
-                                     'map_gen.py',
-                                     meson.build_root() + '/' +  combined_yaml_file,
-                                     get_option('ERROR_MAP_YAML')
-                                   ],
-                    output : 'dump_types.cpp'
+                    output : 'errors_map.cpp'
                  )
 
 phosphor_dump_manager_sources = [
@@ -215,7 +167,7 @@ phosphor_dump_manager_sources = [
         'dump_manager_main.cpp',
         'dump_serialize.cpp',
         'elog_watch.cpp',
-        errors_map_hpp,
+        errors_map_cpp,
         common_hpp,
         server_hpp,
         common_hpp,
