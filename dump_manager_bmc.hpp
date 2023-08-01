@@ -100,6 +100,12 @@ class Manager :
                      std::string originatorId,
                      originatorTypes originatorType) override;
 
+    /** @brief Perform any post restore operations after claiming
+     *  the bus name. Any new D-Bus dump objects created will be
+     *  notified to the subscribers.
+     */
+    void checkAndInitialize() override;
+
   private:
     /** @brief Create Dump entry d-bus object
      *  @param[in] fullPath - Full path of the Dump file name
@@ -118,8 +124,11 @@ class Manager :
     /** @brief Flag to reject user intiated dump if a dump is in progress*/
     // TODO: https://github.com/openbmc/phosphor-debug-collector/issues/19
     static bool fUserDumpInProgress;
-};
 
+    /** @brief Check if any core files present and create BMC core dump
+     */
+    void checkAndCreateCoreDump();
+};
 } // namespace bmc
 } // namespace dump
 } // namespace phosphor
