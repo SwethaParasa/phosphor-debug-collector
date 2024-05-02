@@ -32,6 +32,19 @@ sdeventplus_dep = dependency('sdeventplus')
 phosphor_dbus_interfaces_dep = dependency('phosphor-dbus-interfaces')
 phosphor_logging_dep = dependency('phosphor-logging')
 
+fmt_dep = dependency('fmt', required: false)
+if not fmt_dep.found()
+  fmt_proj = import('cmake').subproject(
+    'fmt',
+    cmake_options: [
+      '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+      '-DMASTER_PROJECT=OFF'
+    ],
+    required: false)
+  assert(fmt_proj.found(), 'fmtlib is required')
+  fmt_dep = fmt_proj.dependency('fmt')
+endif
+
 # Get Cereal dependency.
 cereal_dep = dependency('cereal', required: false)
 has_cereal = cpp.has_header_symbol(
@@ -201,7 +214,7 @@ subdir('host-transport-extensions')
 subdir('dump-extensions')
 
 phosphor_dump_monitor_sources = [
-        dump_types_hpp,
+  #dump_types_hpp,
         'core_manager.cpp',
         'core_manager_main.cpp',
         'watch.cpp'
@@ -218,7 +231,7 @@ phosphor_dump_monitor_install = true
 phosphor_dump_monitor_incdir = []
 
 phosphor_ramoops_monitor_sources = [
-        dump_types_hpp,
+  # dump_types_hpp,
         'ramoops_manager.cpp',
         'ramoops_manager_main.cpp',
         'watch.cpp'
