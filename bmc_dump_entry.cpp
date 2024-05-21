@@ -17,8 +17,10 @@ void Entry::delete_()
     if (isOffloadInProgress())
     {
         log<level::ERR>(
-            fmt::format("Dump offload is in progress, cannot delete id({})", id)
-                .c_str());
+            fmt::format(
+                "Another offload is in progress URI({}) id({}) cannot continue",
+                offloadUri(), id)
+                .c_str());;
         elog<NotAllowed>(
             Reason("Dump offload is in progress, please try later"));
     }
