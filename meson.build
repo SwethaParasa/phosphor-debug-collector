@@ -116,6 +116,10 @@ conf_data.set('BMC_DUMP_ROTATE_CONFIG', get_option('dump_rotate_config').allowed
                description : 'Turn on rotate config for bmc dump'
              )
 
+conf_data.set('TIMESTAMP_FORMAT', get_option('TIMESTAMP_FORMAT'),
+               description : 'Timestamp format in filename: 0-epoch 1-human readable'
+             )
+             
 configure_file(configuration : conf_data,
                output : 'config.h'
               )
