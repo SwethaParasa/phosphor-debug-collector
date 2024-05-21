@@ -14,6 +14,15 @@ namespace bmc
 
 void Entry::delete_()
 {
+    if (isOffloadInProgress())
+    {
+        log<level::ERR>(
+            fmt::format("Dump offload is in progress, cannot delete id({})", id)
+                .c_str());
+        elog<NotAllowed>(
+            Reason("Dump offload is in progress, please try later"));
+    }
+    
     // Delete Dump file from Permanent location
     try
     {
