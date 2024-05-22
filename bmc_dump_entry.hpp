@@ -70,6 +70,29 @@ class Entry : virtual public phosphor::dump::Entry, virtual public EntryIfaces
         this->phosphor::dump::bmc::EntryIfaces::emit_object_added();
     }
 
+    /** @brief Check whether offload is in progress
+     *  @return true if offloading in progress
+     *          false if offloading in not progress
+     */
+    bool isOffloadInProgress()
+    {
+        return offloadInProgress;
+    }
+
+    /** Set offload in progress to true
+     */
+    void setOffloadInProgress()
+    {
+        offloadInProgress = true;
+    }
+
+    /** Reset offload in progress to false
+     */
+    void resetOffloadInProgress()
+    {
+        offloadInProgress = false;
+    }
+
     /** @brief Delete this d-bus object.
      */
     void delete_() override;
@@ -98,6 +121,11 @@ class Entry : virtual public phosphor::dump::Entry, virtual public EntryIfaces
         // #ibm-openbmc/2597
         completedTime(timeStamp);
     }
+
+  private:
+    /** @brief Indicates whether offload in progress
+     */
+    bool offloadInProgress;
 };
 
 } // namespace bmc

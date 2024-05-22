@@ -128,6 +128,20 @@ option('RESOURCE_DUMP_OBJ_ENTRY', type : 'string',
         description : 'The resource dump entry D-Bus object path'
       )
 
+option('BMC_DUMP_FILENAME_REGEX', type: 'string',
+        value: 'obmcdump_([0-9]+)_([0-9]+).([a-zA-Z0-9]+)',
+        description : 'BMC dump file format'
+      )
+
+option('FILENAME_DUMP_ID_POS', type : 'integer',
+        value : 1,
+        description : 'Position of dump id in dump filename'
+      )
+option('FILENAME_EPOCHTIME_POS', type : 'integer',
+        value : 2,
+        description : 'Position of timestamp in dump filename'
+      )
+      
 option('TIMESTAMP_FORMAT', type : 'integer',
         value : 1,
         description : 'Timestamp format in filename: 0-epoch 1-human readable'
