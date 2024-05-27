@@ -147,7 +147,7 @@ uint32_t Manager::captureDump(DumpTypes type, const std::string& path)
     else if (pid > 0)
     {
         Child::Callback callback = [this, type, pid](Child&, const siginfo_t*) {
-            if (type == DumpTypes::USER)
+            if (Manager::fUserDumpInProgress)
             {
                 lg2::info("User initiated dump completed, resetting flag");
                 Manager::fUserDumpInProgress = false;
