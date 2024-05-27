@@ -2,6 +2,7 @@
 
 #include "dump_manager.hpp"
 #include "dump_offload.hpp"
+#include "dump_utils.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 #include <phosphor-logging/elog-errors.hpp>
@@ -27,6 +28,15 @@ void Entry::delete_()
             "URI", offloadUri(), "ID", id);
         elog<NotAllowed>(
             Reason("Dump offload is in progress, please try later"));
+    }
+    
+    // Log PEL for dump delete/offload
+    {
+        auto dBus = sdbusplus::bus::new_default();
+        phosphor::dump::createPEL(
+            path(), "BMC Dump", id,
+            "xyz.openbmc_project.Logging.Entry.Level.Informational",
+            "xyz.openbmc_project.Dump.Error.Invalidate");
     }
 
     // Delete Dump file from Permanent location

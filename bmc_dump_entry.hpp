@@ -5,6 +5,7 @@
 #include "xyz/openbmc_project/Dump/Entry/server.hpp"
 #include "xyz/openbmc_project/Object/Delete/server.hpp"
 #include "xyz/openbmc_project/Time/EpochTime/server.hpp"
+#include "xyz/openbmc_project/Common/FilePath/server.hpp"
 
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/server/object.hpp>
@@ -21,7 +22,8 @@ template <typename T>
 using ServerObject = typename sdbusplus::server::object_t<T>;
 
 using EntryIfaces = sdbusplus::server::object_t<
-    sdbusplus::xyz::openbmc_project::Dump::Entry::server::BMC>;
+    sdbusplus::xyz::openbmc_project::Dump::Entry::server::BMC,
+    sdbusplus::xyz::openbmc_project::Common::server::FilePath>;
 
 using originatorTypes = sdbusplus::xyz::openbmc_project::Common::server::
     OriginatedBy::OriginatorTypes;
@@ -66,6 +68,7 @@ class Entry : virtual public phosphor::dump::Entry, virtual public EntryIfaces
                               parent),
         EntryIfaces(bus, objPath.c_str(), EntryIfaces::action::defer_emit)
     {
+        path(file);
         // Emit deferred signal.
         this->phosphor::dump::bmc::EntryIfaces::emit_object_added();
     }
@@ -116,7 +119,7 @@ class Entry : virtual public phosphor::dump::Entry, virtual public EntryIfaces
         size(fileSize);
         // TODO: Handled dump failed case with #ibm-openbmc/2808
         status(OperationStatus::Completed);
-        file = filePath;
+        path(filePath);
         // TODO: serialization of this property will be handled with
         // #ibm-openbmc/2597
         completedTime(timeStamp);

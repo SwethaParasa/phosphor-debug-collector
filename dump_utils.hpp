@@ -377,5 +377,19 @@ inline DumpTypes getErrorDumpType(phosphor::dump::DumpCreateParams& params)
     throw std::invalid_argument{"Dump type not found"};
 }
 
+/**
+ * @brief Create a new PEL message for dump Delete/Offload
+ *
+ * @param[in] dumpFilePath - Deleted dump file path/name
+ * @param[in] dumpFileType - Deleted dump file type (BMC/Resource/System)
+ * @param[in] dumpId - The dump ID
+ * @param[in] pelSev - PEL severity (Informational by default)
+ * @param[in] errIntf - D-Bus interface name.
+ * @return Returns void
+ **/
+void createPEL(const std::string& dumpFilePath, const std::string& dumpFileType,
+               const int dumpId, const std::string& pelSev,
+               const std::string& errIntf);
+
 } // namespace dump
 } // namespace phosphor

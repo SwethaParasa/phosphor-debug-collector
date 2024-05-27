@@ -33,6 +33,7 @@ void Entry::delete_()
 {
     auto srcDumpID = sourceDumpId();
     auto dumpId = id;
+    auto dumpPathOffLoadUri = offloadUri();
 
     // Offload URI will be set during dump offload
     // Prevent delete when offload is in progress
@@ -67,6 +68,11 @@ void Entry::delete_()
 
     // Remove Dump entry D-bus object
     phosphor::dump::Entry::delete_();
+
+    // Log PEL for dump delete/offload
+    phosphor::dump::createPEL(dumpPathOffLoadUri, "System Dump", dumpId,
+        "xyz.openbmc_project.Logging.Entry.Level.Informational",
+        "xyz.openbmc_project.Dump.Error.Invalidate");
 }
 } // namespace system
 } // namespace dump
