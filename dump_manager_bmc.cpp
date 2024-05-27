@@ -119,6 +119,31 @@ sdbusplus::message::object_path
     return objPath.string();
 }
 
+void Manager::checkAndInitialize()
+{
+    checkAndCreateCoreDump();
+}
+
+void Manager::checkAndCreateCoreDump()
+{
+    if (std::filesystem::exists(CORE_FILE_DIR) &&
+        std::filesystem::is_directory(CORE_FILE_DIR))
+    {
+        for (const auto& file :
+             std::filesystem::directory_iterator(CORE_FILE_DIR))
+        {
+            if (std::filesystem::is_regular_file(file) &&
+                (file.path().filename().string().starts_with("core.")))
+            {
+                // Consider only file name start with "core."
+                lg2::error("Core file found");
+                captureDump(DumpTypes::CORE, file.path().string());
+            }
+        }
+    }
+}
+
+
 uint32_t Manager::captureDump(DumpTypes type, const std::string& path)
 {
     // Get Dump size.

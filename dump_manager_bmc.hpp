@@ -72,6 +72,12 @@ class Manager :
      */
     void restore() override;
 
+      /** @brief Perform any post restore operations after claiming
+     *  the bus name. Any new D-Bus dump objects created will be
+     *  notified to the subscribers.
+     */
+    void checkAndInitialize() override;
+
     /** @brief Implementation for CreateDump
      *  Method to create a BMC dump entry when user requests for a new BMC dump
      *
@@ -126,6 +132,10 @@ class Manager :
 
     /** @brief map of SDEventPlus child pointer added to event loop */
     std::map<pid_t, std::unique_ptr<Child>> childPtrMap;
+
+    /** @brief Check if any core files present and create BMC core dump
+     */
+    void checkAndCreateCoreDump();
 };
 
 } // namespace bmc
